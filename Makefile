@@ -16,7 +16,6 @@ fmt: ## Format go code
 	@gofumpt -l -w .
 
 tools: ## Install extra tools for development
-	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 	go install mvdan.cc/gofumpt@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
