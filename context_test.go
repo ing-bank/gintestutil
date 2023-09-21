@@ -3,12 +3,13 @@ package gintestutil
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
 type testStringer struct {
@@ -103,6 +104,7 @@ func TestPrepareRequest_CreatesExpectedContext(t *testing.T) {
 		"expected error on nonsensical request": {
 			options: []RequestOption{WithUrl("://://::::///::::")},
 
+			//nolint:goerr113 // Not relevant
 			expectedError: &url.Error{Op: "parse", URL: "://://::::///::::", Err: errors.New("missing protocol scheme")},
 		},
 	}
@@ -122,6 +124,7 @@ func TestPrepareRequest_CreatesExpectedContext(t *testing.T) {
 
 			if testData.expectedError != nil {
 				assert.Equal(t, testData.expectedError, mockT.ErrorCalls[0])
+
 				return
 			}
 

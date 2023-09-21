@@ -2,11 +2,12 @@ package gintestutil
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
 type MyObject struct {
@@ -50,6 +51,7 @@ func ExampleResponse() {
 	myController := &MyController{}
 
 	context, writer := PrepareRequest(t)
+	defer writer.Result().Body.Close()
 
 	// Act
 	myController.Get(context)

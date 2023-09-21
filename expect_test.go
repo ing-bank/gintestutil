@@ -2,17 +2,18 @@ package gintestutil
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
 // setup prepares the tests
-func setup(endpoint string, varargs ...ExpectOption) (*testing.T, chan struct{}, *gin.Engine, *sync.WaitGroup, *httptest.Server) {
+func setup(endpoint string, varargs ...ExpectOption) (*testing.T, chan struct{}, *sync.WaitGroup, *httptest.Server) {
 	testObject := new(testing.T)
 
 	// create gin context
@@ -32,15 +33,16 @@ func setup(endpoint string, varargs ...ExpectOption) (*testing.T, chan struct{},
 	// create webserver
 	ts := httptest.NewServer(ginContext)
 
-	return testObject, c, ginContext, expectation, ts
+	return testObject, c, expectation, ts
 }
 
 func TestExpectCalled_SingleCallWithDefaultArgumentsReturnsSuccess(t *testing.T) {
 	t.Parallel()
 
-	// arrange
+	// Arrange
+	//nolint:goconst // Not relevant
 	path := "/hello-world"
-	testObject, c, _, expectation, ts := setup(path)
+	testObject, c, expectation, ts := setup(path)
 
 	// Act
 	_, err := http.Get(fmt.Sprintf("%s%s", ts.URL, path))
@@ -66,7 +68,7 @@ func TestExpectCalled_ZeroCallsWithDefaultArgumentsTimesOutAndFails(t *testing.T
 
 	// arrange
 	path := "/hello-world"
-	_, c, _, expectation, ts := setup(path)
+	_, c, expectation, ts := setup(path)
 
 	// Act
 	// Make a call to and endpoint which is _NOT_ path such that path is never called
@@ -108,7 +110,7 @@ func TestExpectCalled_CalledToOftenReturnsError(t *testing.T) {
 
 	// arrange
 	path := "/hello-world"
-	testObject, c, _, expectation, ts := setup(path)
+	testObject, c, expectation, ts := setup(path)
 
 	// Act
 	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, path))

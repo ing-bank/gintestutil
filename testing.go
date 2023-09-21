@@ -6,8 +6,10 @@ import (
 )
 
 // Compile-time interface checks
-var _ TestingT = new(testing.T)
-var _ TestingT = new(mockT)
+var (
+	_ TestingT = new(testing.T)
+	_ TestingT = new(mockT)
+)
 
 // TestingT is an interface representing testing.T in our tests, allows for verifying Errorf calls. It's perfectly
 // compatible with the normal testing.T, but we use an interface for mocking.

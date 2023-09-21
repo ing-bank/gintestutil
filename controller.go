@@ -11,11 +11,14 @@ func statusHasBody(status int) bool {
 	switch {
 	case status >= http.StatusContinue && status <= 199:
 		return false
+
 	case status == http.StatusNoContent:
 		return false
+
 	case status == http.StatusNotModified:
 		return false
 	}
+
 	return true
 }
 
@@ -26,13 +29,14 @@ func Response(t TestingT, result any, code int, res *http.Response) bool {
 
 	if code != res.StatusCode {
 		t.Errorf("Status code %d is not %d", res.StatusCode, code)
+
 		return false
 	}
 
 	response, err := io.ReadAll(res.Body)
-
 	if err != nil {
 		t.Errorf("failed to read body of response")
+
 		return false
 	}
 
@@ -43,6 +47,7 @@ func Response(t TestingT, result any, code int, res *http.Response) bool {
 
 	if err := json.Unmarshal(response, &result); err != nil {
 		t.Errorf("Failed to unmarshall '%s' into '%T': %v", response, result, err)
+
 		return false
 	}
 

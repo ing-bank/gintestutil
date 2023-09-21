@@ -106,6 +106,7 @@ func TestSuccessResponse_FailsOnNoBody(t *testing.T) {
 	// Arrange
 	testingObject := new(mockT)
 	response := &http.Response{
+		//nolint:mirror // Used for a test
 		Body:       io.NopCloser(bytes.NewBuffer([]byte(""))),
 		StatusCode: http.StatusOK,
 	}
@@ -126,7 +127,8 @@ func TestSuccessResponse_FailsOnUnmarshall(t *testing.T) {
 	testingObject := new(mockT)
 	response := &http.Response{
 		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(bytes.NewBuffer([]byte("test"))),
+		//nolint:mirror // Used for a test
+		Body: io.NopCloser(bytes.NewBuffer([]byte("test"))),
 	}
 
 	var result testObject

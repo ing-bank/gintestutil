@@ -1,8 +1,9 @@
 package gintestutil
 
 import (
-	"github.com/gin-gonic/gin"
 	"sync"
+
+	"github.com/gin-gonic/gin"
 )
 
 // ExpectOption allows various options to be supplied to Expect* functions
@@ -36,6 +37,7 @@ func ExpectCalled(t TestingT, context *gin.Engine, path string, options ...Expec
 
 	if context == nil {
 		t.Errorf("context cannot be nil")
+
 		return nil
 	}
 
@@ -55,15 +57,16 @@ func ExpectCalled(t TestingT, context *gin.Engine, path string, options ...Expec
 	var timesCalled int
 	context.Use(func(c *gin.Context) {
 		c.Next()
-		if c.FullPath() == path {
-			timesCalled++
-			if timesCalled <= config.Times {
-				config.Expectation.Done()
-			} else {
-				t.Errorf("%s hook asserts called %d times but called at least %d times\n", path, config.Times, timesCalled)
-				return
-			}
+		if c.FullPath() != path {
+			return
 		}
+
+		timesCalled++
+		if timesCalled <= config.Times {
+			config.Expectation.Done()
+		}
+
+		t.Errorf("%s hook asserts called %d times but called at least %d times\n", path, config.Times, timesCalled)
 	})
 
 	return config.Expectation
