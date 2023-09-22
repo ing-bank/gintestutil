@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -74,7 +75,6 @@ func TestSuccessResponse_ReturnsExpectedResult(t *testing.T) {
 
 func TestSuccessResponse_ReturnsData(t *testing.T) {
 	t.Parallel()
-
 	// Arrange
 	testingObject := new(mockT)
 
@@ -106,8 +106,7 @@ func TestSuccessResponse_FailsOnNoBody(t *testing.T) {
 	// Arrange
 	testingObject := new(mockT)
 	response := &http.Response{
-		//nolint:mirror // Used for a test
-		Body:       io.NopCloser(bytes.NewBuffer([]byte(""))),
+		Body:       io.NopCloser(strings.NewReader("")),
 		StatusCode: http.StatusOK,
 	}
 
@@ -127,8 +126,7 @@ func TestSuccessResponse_FailsOnUnmarshall(t *testing.T) {
 	testingObject := new(mockT)
 	response := &http.Response{
 		StatusCode: http.StatusOK,
-		//nolint:mirror // Used for a test
-		Body: io.NopCloser(bytes.NewBuffer([]byte("test"))),
+		Body:       io.NopCloser(strings.NewReader("test")),
 	}
 
 	var result testObject

@@ -71,7 +71,6 @@ func ExampleResponse() {
 func ExampleExpectCalled_withoutVarargs() {
 	t := new(testing.T)
 
-	// create gin context
 	ginContext := gin.Default()
 
 	// create expectation
@@ -99,7 +98,6 @@ func ExampleExpectCalled_withoutVarargs() {
 func ExampleExpectCalled_withVarargs() {
 	t := new(testing.T)
 
-	// create gin context
 	ginContext := gin.Default()
 
 	// create expectation

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 	"time"
 
@@ -12,88 +11,83 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// setup prepares the tests
-func setup(endpoint string, varargs ...ExpectOption) (*testing.T, chan struct{}, *sync.WaitGroup, *httptest.Server) {
-	testObject := new(testing.T)
+const expectTimeout = 5 * time.Second
 
-	// create gin context
+func TestExpectCalled_SingleCallReturnsSuccess(t *testing.T) {
+	t.Parallel()
+	// Arrange
+	testObject := new(testing.T)
 	ginContext := gin.Default()
 
-	// create expectation
-	expectation := ExpectCalled(testObject, ginContext, endpoint, varargs...)
-
-	// create endpoints on ginContext
-	ginContext.GET(endpoint, func(context *gin.Context) {
-		context.Status(http.StatusOK)
-	})
-
-	// channel for go-routine to signal completion
-	c := make(chan struct{})
-
-	// create webserver
-	ts := httptest.NewServer(ginContext)
-
-	return testObject, c, expectation, ts
-}
-
-func TestExpectCalled_SingleCallWithDefaultArgumentsReturnsSuccess(t *testing.T) {
-	t.Parallel()
-
-	// Arrange
-	//nolint:goconst // Not relevant
-	path := "/hello-world"
-	testObject, c, expectation, ts := setup(path)
-
 	// Act
-	_, err := http.Get(fmt.Sprintf("%s%s", ts.URL, path))
+	expectation := ExpectCalled(testObject, ginContext, "/ping")
 
 	// Assert
-	assert.Nil(t, err)
+	ginContext.GET("/ping", func(ctx *gin.Context) {
+		ctx.Status(http.StatusOK)
+	})
+
+	ts := httptest.NewServer(ginContext)
+
+	_, err := http.Get(fmt.Sprintf("%s%s", ts.URL, "/ping"))
+
+	assert.NoError(t, err)
+
+	completionChannel := make(chan struct{})
 
 	go func() {
-		defer close(c)
 		expectation.Wait()
+		completionChannel <- struct{}{}
 	}()
 
 	select {
-	case <-c:
+	case <-completionChannel:
 		assert.False(t, testObject.Failed())
-	case <-time.After(15 * time.Second):
-		t.FailNow()
+	case <-time.After(expectTimeout):
+		t.Error("did not complete")
 	}
 }
 
-func TestExpectCalled_ZeroCallsWithDefaultArgumentsTimesOutAndFails(t *testing.T) {
+func TestExpectCalled_ZeroCallsFails(t *testing.T) {
 	t.Parallel()
-
-	// arrange
-	path := "/hello-world"
-	_, c, expectation, ts := setup(path)
+	// Arrange
+	testObject := new(testing.T)
+	ginContext := gin.Default()
 
 	// Act
-	// Make a call to and endpoint which is _NOT_ path such that path is never called
-	_, err := http.Get(fmt.Sprintf("%s%s", ts.URL, "/something-other-than-path"))
+	expectation := ExpectCalled(testObject, ginContext, "/ping")
 
 	// Assert
-	assert.Nil(t, err)
+	ginContext.GET("/ping", func(ctx *gin.Context) {
+		ctx.Status(http.StatusOK)
+	})
+
+	ts := httptest.NewServer(ginContext)
+
+	_, err := http.Get(fmt.Sprintf("%s%s", ts.URL, "/pong"))
+
+	// Assert
+	assert.NoError(t, err)
+
+	completionChannel := make(chan struct{})
 
 	go func() {
-		defer close(c)
 		expectation.Wait()
+		completionChannel <- struct{}{}
 	}()
 
 	select {
-	case <-c:
-		t.FailNow()
-	case <-time.After(15 * time.Second):
-		// test is bounded to accept after 15 seconds
+	case <-completionChannel:
+		t.Error("should not have completed")
+
+	case <-time.After(expectTimeout):
+		// Success!
 	}
 }
 
 func TestExpectCalled_NilGinContextReturnsError(t *testing.T) {
 	t.Parallel()
-
-	// arrange
+	// Arrange
 	testObject := new(testing.T)
 	var ginContext *gin.Engine
 
@@ -105,76 +99,76 @@ func TestExpectCalled_NilGinContextReturnsError(t *testing.T) {
 	assert.Nil(t, expectation)
 }
 
-func TestExpectCalled_CalledToOftenReturnsError(t *testing.T) {
+func TestExpectCalled_CalledTooOftenReturnsError(t *testing.T) {
 	t.Parallel()
+	// Arrange
+	testObject := new(testing.T)
 
-	// arrange
-	path := "/hello-world"
-	testObject, c, expectation, ts := setup(path)
+	ginContext := gin.Default()
 
 	// Act
-	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, path))
-	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, path))
+	expectation := ExpectCalled(testObject, ginContext, "/ping")
 
 	// Assert
+	ginContext.GET("/ping", func(ctx *gin.Context) {
+		ctx.Status(http.StatusOK)
+	})
+
+	ts := httptest.NewServer(ginContext)
+
+	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, "/ping"))
+	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, "/ping"))
+
+	completionChannel := make(chan struct{})
+
 	go func() {
-		defer close(c)
 		expectation.Wait()
+		completionChannel <- struct{}{}
 	}()
 
 	select {
-	case <-c:
+	case <-completionChannel:
 		assert.True(t, testObject.Failed())
-	case <-time.After(15 * time.Second):
-		t.FailNow()
+	case <-time.After(expectTimeout):
+		t.Error("did not complete")
 	}
 }
 
 func TestExpectCalled_TwoTimesWithTwoEndpointsSucceeds(t *testing.T) {
 	t.Parallel()
-
-	// arrange
+	// Arrange
 	testObject := new(testing.T)
 
-	// create gin context
 	ginContext := gin.Default()
 
-	// endpoints
-	endpointCalledTwice := "/hello-world"
-	endpointCalledOnce := "/other-path"
+	// Act
+	expectation := ExpectCalled(testObject, ginContext, "/ping", TimesCalled(2))
+	expectation = ExpectCalled(testObject, ginContext, "/pong", Expectation(expectation))
 
-	// create expectation
-	expectation := ExpectCalled(testObject, ginContext, endpointCalledTwice, TimesCalled(2))
-	expectation = ExpectCalled(testObject, ginContext, endpointCalledOnce, Expectation(expectation))
-
-	// create endpoints on ginContext
-	for _, endpoint := range []string{endpointCalledTwice, endpointCalledOnce} {
+	// Assert
+	for _, endpoint := range []string{"/ping", "/pong"} {
 		ginContext.GET(endpoint, func(context *gin.Context) {
 			context.Status(http.StatusOK)
 		})
 	}
 
-	// channel for go-routine to signal completion
-	c := make(chan struct{})
-
-	// create webserver
 	ts := httptest.NewServer(ginContext)
 
-	// act
-	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, endpointCalledTwice))
-	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, endpointCalledTwice))
-	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, endpointCalledOnce))
+	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, "/ping"))
+	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, "/ping"))
+	_, _ = http.Get(fmt.Sprintf("%s%s", ts.URL, "/pong"))
 
-	// Assert
+	completionChannel := make(chan struct{})
+
 	go func() {
-		defer close(c)
 		expectation.Wait()
+		completionChannel <- struct{}{}
 	}()
 
 	select {
-	case <-c:
+	case <-completionChannel:
 		assert.False(t, testObject.Failed())
-	case <-time.After(15 * time.Second):
-		t.FailNow()
+	case <-time.After(expectTimeout):
+		t.Error("did not complete")
 	}
 }

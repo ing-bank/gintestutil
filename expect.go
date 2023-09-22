@@ -32,10 +32,10 @@ type calledConfig struct {
 // ExpectCalled can be used on a gin endpoint to express an expectation that the endpoint will
 // be called some time in the future. In combination with a test
 // can wait for this expectation to be true or fail after some predetermined amount of time
-func ExpectCalled(t TestingT, context *gin.Engine, path string, options ...ExpectOption) *sync.WaitGroup {
+func ExpectCalled(t TestingT, ctx *gin.Engine, path string, options ...ExpectOption) *sync.WaitGroup {
 	t.Helper()
 
-	if context == nil {
+	if ctx == nil {
 		t.Errorf("context cannot be nil")
 
 		return nil
@@ -55,7 +55,7 @@ func ExpectCalled(t TestingT, context *gin.Engine, path string, options ...Expec
 
 	// Add middleware for provided route
 	var timesCalled int
-	context.Use(func(c *gin.Context) {
+	ctx.Use(func(c *gin.Context) {
 		c.Next()
 		if c.FullPath() != path {
 			return
@@ -64,6 +64,8 @@ func ExpectCalled(t TestingT, context *gin.Engine, path string, options ...Expec
 		timesCalled++
 		if timesCalled <= config.Times {
 			config.Expectation.Done()
+
+			return
 		}
 
 		t.Errorf("%s hook asserts called %d times but called at least %d times\n", path, config.Times, timesCalled)
