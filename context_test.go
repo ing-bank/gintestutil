@@ -102,9 +102,7 @@ func TestPrepareRequest_CreatesExpectedContext(t *testing.T) {
 			expectedBody:   "a b c",
 		},
 		"expected error on nonsensical request": {
-			options: []RequestOption{WithUrl("://://::::///::::")},
-
-			//nolint:goerr113 // Not relevant
+			options:       []RequestOption{WithUrl("://://::::///::::")},
 			expectedError: &url.Error{Op: "parse", URL: "://://::::///::::", Err: errors.New("missing protocol scheme")},
 		},
 	}

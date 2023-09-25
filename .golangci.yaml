@@ -1,3 +1,12 @@
+issues:
+  exclude-rules:
+    - path: (.+)_test.go
+      linters:
+        - goconst
+        - nilnil
+        - bodyclose
+        - goerr113
+
 linters-settings:
   gocritic:
     disabled-checks:
@@ -11,7 +20,7 @@ linters:
     - asasalint
     - asciicheck
     - bidichk
-#    - bodyclose # Only used in examples
+    - bodyclose
     - containedctx
     - contextcheck
     - cyclop
