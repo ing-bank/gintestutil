@@ -34,6 +34,7 @@ func TestProductController_Post_CreatesProducts(t *testing.T) {
 		gintestutil.WithJsonBody(t, TestObject{Name: "test"}),
 		gintestutil.WithMethod(http.MethodPost),
 		gintestutil.WithUrl("https://my-website.com"),
+		gintestutil.WithHeaders(http.Header{"X-Example": []string{"A", "B"}}),
 		gintestutil.WithUrlParams(map[string]any{"category": "barbecue"}),
 	    gintestutil.WithQueryParams(map[string]any{"force": "true"}))
 

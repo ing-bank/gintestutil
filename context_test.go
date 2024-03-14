@@ -25,11 +25,12 @@ func TestPrepareRequest_CreatesExpectedContext(t *testing.T) {
 	tests := map[string]struct {
 		options []RequestOption
 
-		expectedBody   string
-		expectedUrl    string
-		expectedMethod string
-		expectedParams gin.Params
-		expectedError  error
+		expectedBody    string
+		expectedUrl     string
+		expectedMethod  string
+		expectedParams  gin.Params
+		expectedHeaders http.Header
+		expectedError   error
 	}{
 		"empty request": {
 			options: []RequestOption{},
@@ -81,6 +82,18 @@ func TestPrepareRequest_CreatesExpectedContext(t *testing.T) {
 			expectedMethod: http.MethodGet,
 			expectedUrl:    "https://maarten.dev?one=two&three=four&three=five",
 		},
+		"with headers": {
+			options: []RequestOption{
+				WithUrl("https://maarten.dev"),
+				WithHeaders(http.Header{"X-Test-Header": []string{"A", "B"}}),
+			},
+
+			expectedMethod: http.MethodGet,
+			expectedUrl:    "https://maarten.dev",
+			expectedHeaders: http.Header{
+				"X-Test-Header": []string{"A", "B"},
+			},
+		},
 		"maarten.dev url": {
 			options: []RequestOption{WithUrl("https://maarten.dev")},
 
@@ -130,6 +143,8 @@ func TestPrepareRequest_CreatesExpectedContext(t *testing.T) {
 
 			assert.Equal(t, testData.expectedMethod, context.Request.Method)
 			assert.Equal(t, testData.expectedUrl, context.Request.URL.String())
+			assert.Equal(t, testData.expectedHeaders, context.Request.Header)
+
 			assert.ElementsMatch(t, testData.expectedParams, context.Params)
 
 			if testData.expectedBody != "" {
