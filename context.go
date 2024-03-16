@@ -22,6 +22,7 @@ type requestConfig struct {
 	body        io.ReadCloser
 	urlParams   map[string]any
 	queryParams map[string]any
+	headers     http.Header
 }
 
 // applyQueryParams turn a map of string/[]string/maps into query parameter names as expected from the user. Check
@@ -75,6 +76,8 @@ func PrepareRequest(t TestingT, options ...RequestOption) (*gin.Context, *httpte
 		return context, writer
 	}
 
+	context.Request.Header = config.headers
+
 	query := context.Request.URL.Query()
 	applyQueryParams(config.queryParams, query, "")
 	context.Request.URL.RawQuery = query.Encode()
@@ -101,6 +104,13 @@ func PrepareRequest(t TestingT, options ...RequestOption) (*gin.Context, *httpte
 func WithMethod(method string) RequestOption {
 	return func(config *requestConfig) {
 		config.method = method
+	}
+}
+
+// WithHeaders specifies the headers of the request
+func WithHeaders(headers http.Header) RequestOption {
+	return func(config *requestConfig) {
+		config.headers = headers
 	}
 }
 
